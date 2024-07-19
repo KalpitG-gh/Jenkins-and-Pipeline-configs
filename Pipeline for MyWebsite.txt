@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    environment{
+        SSH_CREDENTIALS = 'ubuntu' // Add your SSH credentials ID here
+        REMOTE_HOST = 'ec2-15-206-166-210.ap-south-1.compute.amazonaws.com' // Add your EC2 instance IP here
+        SSH_USER = 'ubuntu' // Replace with your actual SSH user if different
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', credentialsId: 'GitHubCred', url: 'https://github.com/KalpitG-gh/AboutMeWebsite.git'
+            }
+        }
+        stage('Install Nginx') {
+            steps {
+                sshagent([SSH_CREDENTIALS]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${SSH_USER}@${REMOTE_HOST} << 'EOF'
+                      sudo apt update
+                      sudo apt install nginx -y
+                      sudo systemctl enable nginx
+                      sudo systemctl start nginx
+EOF
+                    """
+                }
+            }
+        }
+        stage('Deploy Application') {
+            steps {
+                sshagent([SSH_CREDENTIALS]) {
+                    sh """
+                    tar czf website.tar.gz -C . .
+                    scp -o StrictHostKeyChecking=yes website.tar.gz ${SSH_USER}@${REMOTE_HOST}:/tmp/
+                    ssh -o StrictHostKeyChecking=yes ${SSH_USER}@${REMOTE_HOST} << 'EOF'
+                      sudo tar xzf /tmp/website.tar.gz -C /var/www/html/
+                      sudo systemctl restart nginx
+EOF
+                    """
+                }
+            }
+        }
+       
+    }
+}

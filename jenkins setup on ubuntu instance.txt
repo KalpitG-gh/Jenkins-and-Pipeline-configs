@@ -1,0 +1,82 @@
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+sudo apt-get update
+
+sudo apt-get install jenkins
+
+sudo systemctl start jenkins
+
+sudo systemctl enable jenkins
+
+
+admin -->Hello
+
+
+GitHubcred
+
+sudo nano /etc/nginx/sites-available/default
+
+config files of nginx 
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name kalpitis.online www.kalpitis.online;
+
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+
+sudo nginx -t
+sudo systemctl reload nginx
+sudo systemctl status nginx
+
+
+
+
+
+
+
+
+
+
+
+
+stage('Deploy Application') {
+            steps {
+                sshagent([SSH_CREDENTIALS]) {
+                    sh """
+                    tar czf website.tar.gz -C . .
+                    scp -o StrictHostKeyChecking=no website.tar.gz ${SSH_USER}@${REMOTE_HOST}:/tmp/
+                    ssh -o StrictHostKeyChecking=no ${SSH_USER}@${REMOTE_HOST} << 'EOF'
+                      sudo tar xzf /tmp/website.tar.gz -C /var/www/html/
+                      sudo systemctl restart nginx
+EOF
+                    """
+                }	
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
